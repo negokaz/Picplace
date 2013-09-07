@@ -15,6 +15,8 @@ import android.net.Uri
 import android.graphics.Bitmap
 import android.provider.MediaStore
 import android.provider.BaseColumns
+import android.support.v4.view.PagerAdapter
+import android.support.v4.view.ViewPager
 
 class PicMapActivity extends Activity {
 
@@ -22,8 +24,8 @@ class PicMapActivity extends Activity {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_pic_map)
     
-    val picGallery = findViewById(R.id.picGallery).asInstanceOf[Gallery]
-    picGallery.setAdapter(new ImageAdapter(this))
+    val picPager = findViewById(R.id.picPager).asInstanceOf[ViewPager]
+    picPager.setAdapter(new ImagePageAdapter(this))
   }
   
   override def onCreateOptionsMenu(menu: Menu) = {
@@ -31,42 +33,38 @@ class PicMapActivity extends Activity {
     true
   }
   
-  class ImageAdapter(context: Context) extends BaseAdapter {
+  class ImagePageAdapter(context: Context) extends PagerAdapter {
 
     val resolver = context.getContentResolver()
     
     var imageIds = List[Long]()
-    var imageNames = List[String]()
     
     val cursor = resolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null, null, null, null)
     
     while (cursor.moveToNext()) {
       val id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID))
-	  val name = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.TITLE))
-      
       imageIds = id :: imageIds
-      imageNames= name :: imageNames
     }
     cursor.close()
     
+    override def isViewFromObject(view: View, obj: Any) = view == obj
+    
     override def getCount() = imageIds.size
     
-    override def getItemId(position: Int) = imageIds(position)
+    override def destroyItem(viewGroup: ViewGroup, position: Int, obj: Any) =
+      viewGroup.removeView(obj.asInstanceOf[View])
     
-    override def getItem(position: Int) = imageNames(position)
-
-    override def getView(position: Int, convertView: View, viewGroup: ViewGroup) = {
-	    if (convertView == null) {
-	      val view = new ImageView(PicMapActivity.this)
-	      view.asInstanceOf[ImageView].setImageBitmap(getImageBitmap(position))
-	      view.setLayoutParams(new Gallery.LayoutParams(150, 100))
-	      view.asInstanceOf[ImageView].setScaleType(ImageView.ScaleType.FIT_XY)
-	      view
-	    } else convertView
+    override def instantiateItem(viewGroup: ViewGroup, position: Int) = {
+      val imageView = new ImageView(context)
+      imageView.asInstanceOf[ImageView].setImageBitmap(getImageBitmap(position))
+      imageView.setLayoutParams(new Gallery.LayoutParams(150, 100))
+      imageView.asInstanceOf[ImageView].setScaleType(ImageView.ScaleType.FIT_XY)
+      viewGroup.addView(imageView)
+      imageView
     }
     
 	def getImageBitmap(position: Int) = {
-    	val imageUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, getItemId(position).toString)
+    	val imageUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageIds(position).toString)
     	val options = new BitmapFactory.Options()
     	options.inSampleSize = 4
     	
@@ -74,6 +72,5 @@ class PicMapActivity extends Activity {
     	
     	BitmapFactory.decodeStream(imputStream, null, options)
     }
-    
   }
 }
