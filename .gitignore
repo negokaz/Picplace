@@ -1,0 +1,22 @@
+### gradle ###
+.gradle/
+build/
+
+### Android ###
+local.properties
+bin/
+gen/
+proguard_cache/
+proguard_cache_conf/
+
+### eclipse ###
+.cache
+# for keep Scala Nature, AndroidProguardScala Nature 
+# .classpath
+# .project
+# .settings/
+
+### OS cache ###
+.DS_Store
+Thumbs.db
+
